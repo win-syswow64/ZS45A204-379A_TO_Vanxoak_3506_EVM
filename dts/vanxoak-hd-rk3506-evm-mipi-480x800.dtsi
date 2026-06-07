@@ -1,0 +1,171 @@
+#include <dt-bindings/display/drm_mipi_dsi.h>
+#include <dt-bindings/input/rk-input.h>
+#include <dt-bindings/suspend/rockchip-rk3506.h>
+
+&dsi {
+	status = "okay";
+	rockchip,lane-rate = <1000>;
+	dsi_panel: panel@0 {
+		status = "okay";
+		compatible = "simple-panel-dsi";
+        reset-gpios = <&gpio1 RK_PD3 GPIO_ACTIVE_LOW>;
+		reg = <0>;
+		backlight = <&backlight>;
+		reset-delay-ms = <30>;
+		enable-delay-ms = <100>;
+		prepare-delay-ms = <20>;
+		unprepare-delay-ms = <20>;
+		disable-delay-ms = <20>;
+		init-delay-ms = <120>;
+		dsi,flags = <(MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET)>;
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		dsi,lanes  = <2>;
+		panel-init-sequence = [
+		    // SSD_SEND(0x11,0xB9,0xFF,0x83,0x79);
+		    39 00 05 11 B9 FF 83 79
+
+		    // SSD_SEND(0x11,0xBA,0x93);
+		    15 00 02 11 BA 93
+
+		    // SSD_SEND(0x11,0xB1,0x00,0x40,0x54,0xE9,0x90,0x08,0x1F,0x13,0x73,0x1D,0x1D,0xBF,0x3F,0x42,0x0B,0x66,0xF1,0x00,0xE6);
+		    39 00 17 11 B1 00 40 54 E9 90 08 1F 13 73 1D 1D BF 3F 42 0B 66 F1 00 E6
+
+		    // SSD_SEND(0x11,0xB2,0x00,0x00,0xFE,0x0D,0x06,0x19,0x22,0x00,0xFF,0x0D,0x06,0x19,0x22);
+		    39 00 0F 11 B2 00 00 FE 0D 06 19 22 00 FF 0D 06 19 22
+
+		    // SSD_SEND(0x11,0xB4,0x00,0x08,0x00,0x32,0x10,0x03,0x00,0x00,0x00,0x00,0x00,0x08,0x33,0x01,0x28,0x07,0x37,0x04,0x20,0x08,0x20,0x20,0x02,0x00,0x40,0x08,0x28,0x08,0x30,0x30,0x04);
+		    39 00 21 11 B4 00 08 00 32 10 03 00 00 00 00 00 08 33 01 28 07 37 04 20 08 20 20 02 00 40 08 28 08 30 30 04
+
+		    // SSD_SEND(0x11,0xCC,0x02);
+		    15 00 02 11 CC 02
+
+		    // SSD_SEND(0x11,0xD5,... 56 字节)
+		    39 00 38 11 D5 00 03 08 10 01 00 00 03 00 99 88 88 88 23 01 67 45 01 23 88 88 88 88 88 88 88 99 88 88 32 54 76 10 10 32 88 88 88 88 88 88 01 01 00 00 00 00
+
+		    // SSD_SEND(0x11,0xE0,... 40 字节)
+		    39 00 28 11 E0 79 02 15 1B 3D 3B 3D 2D 4C 06 0D 0F 13 15 13 14 12 18 02 15 1B 3D 3B 3D 2D 4C 06 0D 0F 13 15 13 14 12 18
+
+		    // SSD_SEND(0x11,0xB6,0x00,0x8E,0x00,0x8E);
+		    15 00 04 11 B6 00 8E 00 8E
+
+		    // Sleep Out
+		    05 00 01 11
+		    78 03       // Delay 800ms
+
+		    // Display ON
+		    05 00 01 29
+		    78 03       // Delay 800ms
+		];
+
+		panel-exit-sequence = [
+			05 00 01 28
+			05 00 01 10
+		];
+
+		disp_timings0: display-timings {
+			native-mode = <&dsi_timing0>;
+			dsi_timing0: timing0 {
+				clock-frequency = <27000000>;
+				hactive = <480>;   	
+				vactive = <854>;   	 
+				hfront-porch = <32>;  
+				hsync-len = <4>;   	 
+				hback-porch = <32>;  
+				vfront-porch = <9>;  
+				vsync-len = <4>;     
+				vback-porch = <3>;   
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in_dsi: endpoint {
+					remote-endpoint = <&dsi_out_panel>;
+					status = "okay";
+				};
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+&display_subsystem {
+	status = "okay";
+	logo-memory-region = <&drm_logo>;
+};
+
+&vop {
+	status = "okay";
+};
+
+&dsi_in_vop {
+	status = "okay";
+};
+
+&rgb_in_vop {
+	status = "disabled";
+};
+
+&route_dsi {
+	status = "okay";
+	//logo,rotate = <3>;
+};
+
+&route_rgb {
+	status = "disabled";
+};
+
+&dsi_dphy {
+	status = "okay";
+};
+
+&backlight {
+	compatible = "pwm-backlight";
+	pwms = <&pwm0_4ch_2 0 25000 0>;
+	status = "okay";
+};
+
+// TOUCH
+&i2c2 {
+	status = "okay";
+	 pinctrl-0 = <&rm_io4_i2c2_scl &rm_io5_i2c2_sda>;
+
+	myts@38 {
+		status = "okay";
+		compatible = "hyn,cst128a";
+		reg = <0x38>;
+		tp-size = <89>;
+		max-x = <480>;
+		max-y = <800>;
+		touch-gpio = <&gpio0 RK_PB1 IRQ_TYPE_LEVEL_LOW>;
+		reset-gpio = <&gpio1 RK_PB4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	myts{
+		touch_gpio: touch-gpio {
+			rockchip,pins = <0 RK_PB1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
